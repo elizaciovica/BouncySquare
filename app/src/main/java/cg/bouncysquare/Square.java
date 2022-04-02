@@ -4,6 +4,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import android.content.Context;
+import android.graphics.*;
+import android.opengl.*;
+
 import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
@@ -12,11 +16,21 @@ public class Square {
     private FloatBuffer mFVertexBuffer;
     private ByteBuffer mColorBuffer;
     private ByteBuffer mIndexBuffer;
+    public FloatBuffer mTextureBuffer;
+
+    private int[] textures = new int[1];
+    float[] textureCoords =
+            {
+                    1.0f, 1.0f,
+                    0.0f, 1.0f,
+                    1.0f, 0.0f,
+                    0.0f, 0.0f
+            };
 
     public Square() {
         float vertices[] =
                 {
-                        -2.0f, -1.0f,
+                        -1.0f, -1.0f,
                         1.0f, -1.0f,
                         -1.0f, 1.0f,
                         1.0f, 1.0f
@@ -42,10 +56,18 @@ public class Square {
                         */
 
                         // blue color
+                        /*
                         0, 0, maxColor, maxColor,
                         0, 0, maxColor, maxColor,
                         0, 0, maxColor, maxColor,
                         0, 0, maxColor, maxColor,
+
+                         */
+
+                        maxColor, maxColor, maxColor, maxColor,
+                        maxColor, maxColor, maxColor, maxColor,
+                        maxColor, maxColor, maxColor, maxColor,
+                        maxColor, maxColor, maxColor, maxColor,
                 };
 
         byte indices[] =
@@ -69,20 +91,45 @@ public class Square {
         mIndexBuffer.put(indices);
         mIndexBuffer.position(0);
 
+        ByteBuffer tbb = ByteBuffer.allocateDirect(textureCoords.length * 4);
+        tbb.order(ByteOrder.nativeOrder());
+        mTextureBuffer = tbb.asFloatBuffer();
+        mTextureBuffer.put(textureCoords);
+        mTextureBuffer.position(0);
+
     }
 
     public void draw(GL10 gl) {
 
+        gl.glFrontFace(GL11.GL_CW);
         gl.glVertexPointer(2, GL11.GL_FLOAT, 0, mFVertexBuffer);
         gl.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, 0, mColorBuffer);
-        //gl.glDrawElements(GL11.GL_TRIANGLES, 6, GL11.GL_UNSIGNED_BYTE, mIndexBuffer);
-        //gl.glDrawElements(GL11.GL_POINTS, 6, GL11.GL_UNSIGNED_BYTE, mIndexBuffer);
-        //gl.glDrawElements(GL11.GL_LINE_STRIP, 6, GL11.GL_UNSIGNED_BYTE, mIndexBuffer);
-        //gl.glDrawElements(GL11.GL_LINE_LOOP, 6, GL11.GL_UNSIGNED_BYTE, mIndexBuffer);
-        //gl.glDrawElements(GL11.GL_LINES, 6, GL11.GL_UNSIGNED_BYTE, mIndexBuffer);
-        gl.glDrawElements(GL11.GL_TRIANGLE_STRIP, 6, GL11.GL_UNSIGNED_BYTE, mIndexBuffer);
-        //gl.glDrawElements(GL11.GL_TRIANGLE_FAN, 6, GL11.GL_UNSIGNED_BYTE, mIndexBuffer);
+        gl.glDrawElements(GL11.GL_TRIANGLES, 6, GL11.GL_UNSIGNED_BYTE, mIndexBuffer);
 
-        gl.glFrontFace(GL11.GL_CW);
+        gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mFVertexBuffer);
+        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+        //gl.glColorPointer(4, GL10.GL_UNSIGNED_BYTE, 0, mColorBuffer);
+        gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
+        gl.glEnable(GL10.GL_TEXTURE_2D);
+
+        //gl.glEnable(GL10.GL_BLEND);
+        //gl.glBlendFunc(GL10.GL_ONE, GL10.GL_SRC_COLOR);
+        gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
+        gl.glTexCoordPointer(2, GL10.GL_FLOAT,0, mTextureBuffer);
+        gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+
+    }
+
+    public void createTexture(GL10 gl, Context contextRegf, int resource) {
+        Bitmap image = BitmapFactory.decodeResource(contextRegf.getResources(), resource);
+        gl.glGenTextures(1, textures, 0);
+        gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
+        GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, image, 0);
+
+        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
+        gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+
+        image.recycle();
+
     }
 }
